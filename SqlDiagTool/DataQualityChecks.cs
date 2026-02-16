@@ -1,20 +1,10 @@
 using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
-/// <summary>
-/// Data quality and integrity checks that query SQL Server metadata to catch
-/// problems that break applications silently.
-/// Each check: connects → queries system views → classifies as PASS/WARNING/FAIL → returns a TestResult.
-/// </summary>
+/// <summary>Data quality checks via SQL Server metadata; PASS/WARNING/FAIL per check.</summary>
 static class DataQualityChecks
 {
-    // ─── CheckSuspiciousNullables: Finds columns that allow NULL but probably ──
-    //      shouldn't based on their name.
-    //
-    // Heuristic: columns with names like Email, Name, Phone, Address, Title,
-    // Status, Code, etc. in user tables that are marked IS_NULLABLE = 'YES'.
-    // These are common sources of NullReferenceException in application code.
-
+    /// <summary>Flags nullable columns with business-like names (Email, Name, Status, etc.) that often cause NullRefs.</summary>
     public static async Task<TestResult> CheckSuspiciousNullables(string connStr)
     {
         var sw = Stopwatch.StartNew();
@@ -87,13 +77,7 @@ static class DataQualityChecks
         }
     }
 
-    // ─── CheckUnconstrainedColumns: Finds columns with no constraints at all ──
-    //
-    // A column with no CHECK, no DEFAULT, no FK, and no PK/UNIQUE constraint
-    // accepts any value (including garbage). This is common in legacy databases
-    // and leads to silent data corruption.
-    // Reports user-table columns that have zero constraints of any kind.
-
+    /// <summary>Finds columns with no PK/FK/CHECK/DEFAULT/UNIQUE (risk of silent bad data).</summary>
     public static async Task<TestResult> CheckUnconstrainedColumns(string connStr)
     {
         var sw = Stopwatch.StartNew();
@@ -185,14 +169,7 @@ static class DataQualityChecks
         }
     }
 
-    // ─── CheckInconsistentDataTypes: Finds columns across tables that share ───
-    //      the same name but use different data types.
-    //
-    // Example: Orders.UserId is INT but AuditLog.UserId is BIGINT.
-    // This causes implicit conversion bugs, JOIN performance issues, and
-    // silent truncation when moving data between tables.
-    // Only flags column names that appear in 2+ tables with different types.
-
+    /// <summary>Finds same-named columns with different types across tables (e.g. UserId INT vs BIGINT).</summary>
     public static async Task<TestResult> CheckInconsistentDataTypes(string connStr)
     {
         var sw = Stopwatch.StartNew();

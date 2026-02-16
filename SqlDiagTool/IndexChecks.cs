@@ -1,18 +1,10 @@
 using Microsoft.Data.SqlClient;
 using System.Diagnostics;
 
-/// <summary>
-/// Index health checks that query SQL Server DMVs to find performance problems.
-/// Each check: connects → queries index metadata → classifies as PASS/WARNING/FAIL → returns a TestResult.
-/// </summary>
+/// <summary>Index health checks via DMVs: missing, unused, duplicate indexes.</summary>
 static class IndexChecks
 {
-    // ─── CheckMissingIndexes: Queries sys.dm_db_missing_index_details ─────────
-    //
-    // SQL Server tracks queries that would benefit from an index and records
-    // the suggested table, columns, and estimated improvement in DMVs.
-    // This surfaces the top recommendations ranked by estimated impact.
-
+    /// <summary>Top missing-index suggestions from sys.dm_db_missing_index_* (by impact).</summary>
     public static async Task<TestResult> CheckMissingIndexes(string connStr)
     {
         var sw = Stopwatch.StartNew();
@@ -53,7 +45,6 @@ static class IndexChecks
                 var ineqCols = reader["InequalityColumns"] is DBNull ? "" : reader["InequalityColumns"]!.ToString();
                 var inclCols = reader["IncludedColumns"] is DBNull ? "" : reader["IncludedColumns"]!.ToString();
 
-                // Build a concise column summary
                 var cols = new List<string>();
                 if (!string.IsNullOrEmpty(eqCols)) cols.Add($"eq=[{eqCols}]");
                 if (!string.IsNullOrEmpty(ineqCols)) cols.Add($"ineq=[{ineqCols}]");
@@ -82,13 +73,7 @@ static class IndexChecks
         }
     }
 
-    // ─── CheckUnusedIndexes: Queries sys.dm_db_index_usage_stats ─────────────
-    //
-    // Every index has a maintenance cost (writes must update it).
-    // If an index is never used for seeks, scans, or lookups, it's dead weight
-    // that slows down INSERT/UPDATE/DELETE for no benefit.
-    // This finds non-clustered indexes with zero reads but some writes.
-
+    /// <summary>Non-clustered indexes with zero reads but active writes (dead weight).</summary>
     public static async Task<TestResult> CheckUnusedIndexes(string connStr)
     {
         var sw = Stopwatch.StartNew();
@@ -158,13 +143,7 @@ static class IndexChecks
         }
     }
 
-    // ─── CheckDuplicateIndexes: Compares index column definitions ────────────
-    //
-    // Two indexes on the same table covering the same key columns (in the same order)
-    // are redundant. The narrower one can usually be dropped.
-    // This compares the key column list (built via STRING_AGG) for every index pair
-    // on each table.
-
+    /// <summary>Finds same-table index pairs with identical key columns (redundant).</summary>
     public static async Task<TestResult> CheckDuplicateIndexes(string connStr)
     {
         var sw = Stopwatch.StartNew();

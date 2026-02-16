@@ -1,16 +1,9 @@
 using System.Text;
 
-/// <summary>
-/// Generates actionable reports from diagnostic test results.
-/// Groups findings by severity, suggests fixes, and exports to file.
-/// </summary>
+/// <summary>Builds reports from test results: severity groups, fix suggestions, file export.</summary>
 static class ReportGenerator
 {
-    // ─── SuggestFix: Returns a concrete recommendation for each failed/warned test ──
-    //
-    // Uses keyword matching on the test name so suggestions stay relevant even if
-    // test names are adjusted. Returns empty string for PASS results.
-
+    /// <summary>Returns fix suggestion by test name; empty for PASS.</summary>
     static string SuggestFix(TestResult r)
     {
         if (r.Status == Status.PASS) return "";
@@ -65,10 +58,48 @@ static class ReportGenerator
         if (name.Contains("inconsistent data type"))
             return "Fix: Standardize column types across tables. ALTER TABLE [t] ALTER COLUMN [col] INT; — migrate data first.";
 
+        // Deprecated & Legacy Patterns
+        if (name.Contains("deprecated data type"))
+            return "Fix: Replace text→varchar(max), ntext→nvarchar(max), image→varbinary(max), timestamp→rowversion. Migrate data first.";
+        if (name.Contains("heap"))
+            return "Fix: ALTER TABLE [schema].[table] ADD CONSTRAINT PK_TableName PRIMARY KEY CLUSTERED (Id); — or add a clustered index on the best key.";
+        if (name.Contains("guid primary key"))
+            return "Fix: Switch DEFAULT to NEWSEQUENTIALID(), or redesign PK to INT IDENTITY (clustered) with GUID as a non-clustered unique key.";
+
+        // Stored Procedure & Trigger Audit
+        if (name.Contains("stored procedure inventory"))
+            return "Fix: Migrate proc logic to application code (service layer / repository). Replace EXEC calls with parameterized queries from your ORM.";
+        if (name.Contains("trigger inventory"))
+            return "Fix: Replace triggers with application-level event handlers or domain events. Triggers hide side-effects and break ORM assumptions.";
+        if (name.Contains("views with logic"))
+            return "Fix: Reimplement complex view logic in application code (LINQ, service layer). Keep views as simple projections only.";
+        if (name.Contains("dynamic sql"))
+            return "Fix: Replace dynamic SQL with parameterized queries or stored procs with fixed schemas. Eliminates SQL injection risk and enables static analysis.";
+
+        // Cross-Database & External Dependencies
+        if (name.Contains("cross-database"))
+            return "Fix: Eliminate three-part names. Copy needed data via ETL/sync, or merge databases before migrating to the cloud.";
+        if (name.Contains("linked server"))
+            return "Fix: Replace linked server queries with REST APIs, Azure Data Factory, or ETL pipelines. Linked servers don't exist in Azure SQL DB.";
+        if (name.Contains("sql agent job"))
+            return "Fix: Migrate SQL Agent jobs to Azure Functions, Logic Apps, or external cron schedulers before moving to Azure SQL DB.";
+
+        // Table Structure & Sizing
+        if (name.Contains("table size inventory"))
+            return "Fix: Use the inventory to prioritize migration (largest tables first) and size backup/restore windows.";
+        if (name.Contains("wide table"))
+            return "Fix: Split wide tables into smaller entities (normalize or vertical partitioning). Reduces ORM complexity and avoids 8060-byte row limit.";
+        if (name.Contains("unused table"))
+            return "Fix: Drop or archive unused tables before modernization. Verify no application code references them.";
+
+        // Collation & Encoding
+        if (name.Contains("collation mismatch"))
+            return "Fix: ALTER COLUMN to use database default collation, or add COLLATE in queries. Standardize before migration to avoid JOIN failures.";
+        if (name.Contains("non-unicode"))
+            return "Fix: Convert char/varchar to nchar/nvarchar for any column storing international text. Migrate data and update app code.";
+
         return "Fix: Review the error details above and address the root cause.";
     }
-
-    // ─── Severity: Maps Status to a report severity label ────────────────────
 
     static string Severity(Status s) => s switch
     {
@@ -78,11 +109,7 @@ static class ReportGenerator
         _              => "UNKNOWN"
     };
 
-    // ─── PrintFullReport: Grouped summary with fix suggestions to console ────
-    //
-    // Groups results into Critical / Warning / OK sections.
-    // For each non-passing result, prints the fix recommendation.
-
+    /// <summary>Prints report to console: Critical / Warning / OK with fix suggestions.</summary>
     public static void PrintFullReport(List<TestResult> results)
     {
         var critical = results.Where(r => r.Status == Status.FAIL).ToList();
@@ -131,7 +158,7 @@ static class ReportGenerator
             }
         }
 
-        // Passed section (compact)
+        // Passed section
         if (passed.Count > 0)
         {
             Console.WriteLine(new string('─', 70));
@@ -146,8 +173,7 @@ static class ReportGenerator
         Console.WriteLine(new string('═', 70));
     }
 
-    // ─── ExportToTextFile: Writes a human-readable report to a .txt file ─────
-
+    /// <summary>Writes report to a .txt file (grouped by severity).</summary>
     public static void ExportToTextFile(List<TestResult> results, string filePath)
     {
         var sb = new StringBuilder();
@@ -194,13 +220,11 @@ static class ReportGenerator
         Console.WriteLine($"  📄 Report saved to: {filePath}");
     }
 
-    // ─── ExportToCsv: Writes results to a .csv file for spreadsheet use ──────
-
+    /// <summary>Writes results to .csv for spreadsheet use.</summary>
     public static void ExportToCsv(List<TestResult> results, string filePath)
     {
         var sb = new StringBuilder();
 
-        // Header row
         sb.AppendLine("Severity,TestName,Status,ElapsedMs,Message,SuggestedFix");
 
         foreach (var r in results)
@@ -208,7 +232,6 @@ static class ReportGenerator
             var severity = Severity(r.Status);
             var fix = SuggestFix(r);
 
-            // Escape CSV fields: wrap in quotes and double any internal quotes
             sb.AppendLine($"{severity}," +
                           $"{CsvEscape(r.TestName)}," +
                           $"{r.Status}," +
@@ -226,7 +249,6 @@ static class ReportGenerator
     // Truncates a message for console display, keeping first N characters
     static string TruncateMessage(string msg, int maxLen)
     {
-        // Replace newlines with spaces for single-line display
         var clean = msg.Replace("\n", " ").Replace("\r", "");
         return clean.Length <= maxLen ? clean : clean[..maxLen] + "...";
     }
@@ -239,11 +261,7 @@ static class ReportGenerator
         return $"\"{escaped}\"";
     }
 
-    // ─── CleanupOldReports: Keeps only the last N report sets, deletes older ones ──
-    //
-    // A "report set" is a pair of files (.txt + .csv) sharing the same timestamp.
-    // Files are sorted by creation time descending; the newest N sets are kept.
-
+    /// <summary>Keeps last N report sets (.txt + .csv per timestamp), deletes older.</summary>
     public static void CleanupOldReports(string reportDir, int keepCount = 5)
     {
         if (!Directory.Exists(reportDir)) return;

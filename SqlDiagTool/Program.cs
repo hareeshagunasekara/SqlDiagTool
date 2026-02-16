@@ -410,8 +410,8 @@ var appConnStr = DatabaseSetup.BuildAppConnStr(goodConnStr);
 
 Console.WriteLine("  Schema Health Checks  (database: DiagnosticsTestDb)");
 Console.WriteLine();
-Console.WriteLine("  ℹ️  Sections 7–15 run against a test database created with INTENTIONAL problems");
-Console.WriteLine("     (missing PKs, orphaned rows, duplicate indexes, etc.).");
+Console.WriteLine("  ℹ️  Sections 7–30 run against a test database created with INTENTIONAL problems");
+Console.WriteLine("     (missing PKs, orphaned rows, duplicate indexes, deprecated types, etc.).");
 Console.WriteLine("     ⚠️  WARN results here confirm that each problem was detected correctly.");
 Console.WriteLine();
 
@@ -500,6 +500,179 @@ results.Add(r);
 PrintSection("15. Inconsistent Data Types — Same name, different types across tables");
 
 r = await DataQualityChecks.CheckInconsistentDataTypes(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Deprecated & Legacy Patterns  (against app database)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Console.WriteLine();
+Console.WriteLine("  Deprecated & Legacy Patterns  (database: DiagnosticsTestDb)");
+Console.WriteLine();
+Console.WriteLine("  ℹ️  Sections 16–18 detect outdated features that block cloud migration");
+Console.WriteLine("     or cause performance problems at scale.");
+Console.WriteLine();
+
+// ─── Deprecated Data Types — text, ntext, image, timestamp ───────────
+
+PrintSection("16. Deprecated Data Types — text, ntext, image, timestamp");
+
+r = await LegacyPatternChecks.CheckDeprecatedDataTypes(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Heap Tables — Tables with no clustered index ────────────────────
+
+PrintSection("17. Heap Tables — No clustered index (fragmentation + full scans)");
+
+r = await LegacyPatternChecks.CheckHeapTables(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── GUID Primary Keys — uniqueidentifier as clustered PK ───────────
+
+PrintSection("18. GUID Primary Keys — Random GUID clustered PK (page splits)");
+
+r = await LegacyPatternChecks.CheckGuidPrimaryKeys(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Stored Procedure & Trigger Audit  
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Console.WriteLine();
+Console.WriteLine("  Stored Procedure & Trigger Audit  (database: DiagnosticsTestDb)");
+Console.WriteLine();
+Console.WriteLine("  ℹ️  Sections 19–22 map where business logic lives in the database.");
+Console.WriteLine("     Modernization = pulling this logic into application code.");
+Console.WriteLine();
+
+// ─── Stored Procedure Inventory — Count and list all procs ───────────
+
+PrintSection("19. Stored Procedure Inventory — Server-side logic by schema");
+
+r = await CodeAuditChecks.CheckStoredProcedureInventory(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Trigger Inventory — Hidden side-effects on DML ──────────────────
+
+PrintSection("20. Trigger Inventory — INSERT/UPDATE/DELETE triggers on tables");
+
+r = await CodeAuditChecks.CheckTriggerInventory(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Views with Logic — Complex views masking business rules ─────────
+
+PrintSection("21. Views with Logic — 3+ JOINs, CASE, UNION, or subqueries");
+
+r = await CodeAuditChecks.CheckViewsWithLogic(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Dynamic SQL Detection — EXEC(@sql) / sp_executesql in procs ─────
+
+PrintSection("22. Dynamic SQL Detection — Security risk + impossible to analyze statically");
+
+r = await CodeAuditChecks.CheckDynamicSql(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Cross-Database & External Dependencies  (against app database)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Console.WriteLine();
+Console.WriteLine("  Cross-Database & External Dependencies  (database: DiagnosticsTestDb)");
+Console.WriteLine();
+Console.WriteLine("  ℹ️  Sections 23–25 find anything tying this database to other databases");
+Console.WriteLine("     or servers — these are migration blockers.");
+Console.WriteLine();
+
+// ─── Cross-Database References — Three-part names in procs/views ─────
+
+PrintSection("23. Cross-Database References — OtherDb.dbo.Table in procs/views");
+
+r = await DependencyChecks.CheckCrossDbReferences(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Linked Server Usage — OPENQUERY / four-part names ───────────────
+
+PrintSection("24. Linked Server Usage — OPENQUERY, OPENROWSET, four-part names");
+
+r = await DependencyChecks.CheckLinkedServerUsage(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── SQL Agent Job Dependencies — Jobs referencing this database ─────
+
+PrintSection("25. SQL Agent Job Dependencies — Scheduled jobs targeting this DB");
+
+r = await DependencyChecks.CheckSqlAgentJobDependencies(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Table Structure & Sizing  (against app database)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Console.WriteLine();
+Console.WriteLine("  Table Structure & Sizing  (database: DiagnosticsTestDb)");
+Console.WriteLine();
+Console.WriteLine("  ℹ️  Sections 26–28 help prioritize what to migrate first and spot design problems.");
+Console.WriteLine();
+
+// ─── Table Size Inventory — Row count + disk size, largest first ───────
+
+PrintSection("26. Table Size Inventory — Row count + disk size (data + index), largest first");
+
+r = await TableStructureChecks.CheckTableSizeInventory(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Wide Tables — 20+ columns or row size near 8060 bytes ─────────────
+
+PrintSection("27. Wide Tables — 20+ columns or row size approaching 8060-byte limit");
+
+r = await TableStructureChecks.CheckWideTables(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Unused Tables — Zero rows or never referenced ─────────────────────
+
+PrintSection("28. Unused Tables — Zero rows or never referenced by proc/view/FK");
+
+r = await TableStructureChecks.CheckUnusedTables(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+//  Collation & Encoding  (against app database)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+Console.WriteLine();
+Console.WriteLine("  Collation & Encoding  (database: DiagnosticsTestDb)");
+Console.WriteLine();
+Console.WriteLine("  ℹ️  Sections 29–30 catch encoding mismatches that cause silent corruption or query failures.");
+Console.WriteLine();
+
+// ─── Collation Mismatches — Columns with non-default collation ─────────
+
+PrintSection("29. Collation Mismatches — Columns/tables using different collation than DB default");
+
+r = await EncodingChecks.CheckCollationMismatches(appConnStr);
+PrintResult(r);
+results.Add(r);
+
+// ─── Non-Unicode Columns — char/varchar storing text ──────────────────
+
+PrintSection("30. Non-Unicode Columns — char/varchar that should be nchar/nvarchar");
+
+r = await EncodingChecks.CheckNonUnicodeColumns(appConnStr);
 PrintResult(r);
 results.Add(r);
 

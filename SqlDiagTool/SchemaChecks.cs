@@ -3,12 +3,10 @@ using System.Diagnostics;
 
 /// <summary>
 /// Schema health checks that query SQL Server metadata to find structural problems.
-/// Each check: connects → queries system views → classifies as PASS/WARNING/FAIL → returns a TestResult.
 /// </summary>
 static class SchemaChecks
 {
     // ─── CheckMissingPrimaryKeys: Finds tables with no primary key defined ───
-    //
     // Tables without PKs cause problems for ORMs, replication, and change tracking.
     // Queries sys.tables + sys.key_constraints to find tables missing a PK constraint.
 
@@ -61,7 +59,6 @@ static class SchemaChecks
 
     // ─── CheckMissingForeignKeys: Finds columns that look like FK references ──
     //      but have no FK constraint defined.
-    //
     // Heuristic: integer columns whose name ends in "Id" (but isn't the table's own PK)
     // and has no matching entry in sys.foreign_key_columns.
     // This catches patterns like CustomerId, OrderId, Product_Id without a constraint.
@@ -142,14 +139,12 @@ static class SchemaChecks
     }
 
     // ─── CheckOrphanedRecords: For existing FK relationships, checks for rows ──
-    //      in child tables that reference nonexistent parent records.
-    //
     // How it works:
     //   1. Query sys.foreign_keys to get all FK relationships
     //   2. For each single-column FK, run: SELECT COUNT(*) FROM child LEFT JOIN parent WHERE parent IS NULL
     //   3. Report any FKs where orphaned rows exist
     //
-    // Note: Only checks single-column FKs. Composite FKs are skipped (covers 95%+ of cases).
+    // Only checks single-column FKs. Composite FKs are skipped
 
     public static async Task<TestResult> CheckOrphanedRecords(string connStr)
     {
