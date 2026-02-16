@@ -1,0 +1,31 @@
+# ─── Build output ─────────────────────────────────────────────────────────
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+
+# ─── IDE / editor ────────────────────────────────────────────────────────
+.idea/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# ─── NuGet ────────────────────────────────────────────────────────────────
+*.nupkg
+**/packages/
+project.lock.json
+project.fragment.lock.json
+
+# ─── OS files ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Diagnostic reports ────────────────────────
+SqlDiagTool/reports/
+
+# ─── Secrets  ──────────────────────────────────
+appsettings.*.json
+*.env
+.env
