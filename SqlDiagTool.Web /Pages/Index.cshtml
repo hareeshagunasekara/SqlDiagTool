@@ -1,0 +1,298 @@
+@page "/diagnostics"
+@model SqlDiagTool.Web.Pages.IndexModel
+@using SqlDiagTool.Shared
+@{
+    ViewData["Title"] = "SQL Diagnostics";
+    var fail = Model.Results?.Where(r => r.Status == Status.FAIL).ToList() ?? new List<TestResult>();
+    var warning = Model.Results?.Where(r => r.Status == Status.WARNING).ToList() ?? new List<TestResult>();
+    var pass = Model.Results?.Where(r => r.Status == Status.PASS).ToList() ?? new List<TestResult>();
+}
+
+<style>
+    details summary.cursor-pointer {
+        cursor: pointer;
+    }
+</style>
+
+<div class="container mt-4">
+    <h1>SQL Diagnostics</h1>
+    <p class="lead">Choose a database to scan, then generate a structure/design report.</p>
+
+    <div class="scan-panel mb-4">
+        <form method="post">
+            @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+            {
+                <div class="alert alert-danger mb-3" role="alert">@Model.ErrorMessage</div>
+            }
+
+            <div class="scan-panel-grid">
+                <div class="scan-panel-left">
+                    <label class="form-label" for="SelectedTargetId">Target Database</label>
+                    <select class="form-select" id="SelectedTargetId" name="SelectedTargetId" asp-items="Model.DatabaseTargets"></select>
+                    <span asp-validation-for="SelectedTargetId" class="text-danger small"></span>
+                </div>
+
+                <div class="scan-panel-middle">
+                    <button type="submit" class="btn btn-primary d-flex align-items-center gap-2" id="scanButton">
+                        <i class="bi bi-arrow-repeat spinner spinner-hidden" id="scanSpinner"></i>
+                        <span id="scanButtonText">Run Diagnostics</span>
+                    </button>
+                </div>
+
+                <div class="scan-panel-right">
+                    <div id="progressText" class="text-muted small" style="display: none;"></div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @if (Model.Results != null && Model.Results.Count > 0)
+    {
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <div>
+                @if (!string.IsNullOrEmpty(Model.SelectedDatabaseName))
+                {
+                    <h3 class="mb-0">@Model.SelectedDatabaseName</h3>
+                }
+            </div>
+            <button type="button" class="btn btn-outline-secondary btn-sm" id="clearFiltersButton" style="display: none;">
+                <i class="bi bi-x-circle me-1"></i>Clear Filters
+            </button>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-success status-card" data-status="PASS">
+                    <div class="card-body text-center">
+                        <i class="bi bi-check-circle-fill status-card-icon pass"></i>
+                        <h5 class="card-title text-success mb-2">PASS</h5>
+                        <p class="card-text display-6 mb-0">@pass.Count</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-warning status-card" data-status="WARNING">
+                    <div class="card-body text-center">
+                        <i class="bi bi-exclamation-triangle-fill status-card-icon warn"></i>
+                        <h5 class="card-title text-warning mb-2">WARN</h5>
+                        <p class="card-text display-6 mb-0">@warning.Count</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-danger status-card" data-status="FAIL">
+                    <div class="card-body text-center">
+                        <i class="bi bi-x-circle-fill status-card-icon fail"></i>
+                        <h5 class="card-title text-danger mb-2">FAIL</h5>
+                        <p class="card-text display-6 mb-0">@fail.Count</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.ScanReport != null)
+        {
+            <div class="download-section mb-4">
+                @if (Model.ScanReport.Summary != null)
+                {
+                    <div class="text-muted mb-3">Scan completed in @((Model.ScanReport.Summary.DurationMs / 1000.0).ToString("F1"))s</div>
+                }
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="?handler=DownloadPdfReport" class="btn btn-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf me-2" viewBox="0 0 16 16">
+                            <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
+                            <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.38-.273-.882-.273-1.507 0-.88.11-1.325.273-1.507.09-.18.24-.319.438-.421.2-.103.444-.17.732-.17.288 0 .532.067.732.17.2.102.348.24.438.421.164.182.273.627.273 1.507 0 .625-.078 1.127-.273 1.507a.81.81 0 0 1-.438.42c-.2.103-.444.17-.732.17-.288 0-.532-.067-.732-.17m.66-2.87c.08.285.213.49.4.597.19.108.42.163.69.163.27 0 .5-.055.69-.163a.99.99 0 0 0 .4-.597c.08-.285.12-.715.12-1.29 0-.575-.04-1.005-.12-1.29a.99.99 0 0 0-.4-.597c-.19-.108-.42-.163-.69-.163s-.5.055-.69.163a.99.99 0 0 0-.4.597c-.08.285-.12.715-.12 1.29 0 .575.04 1.005.12 1.29m2.96-1.895h.893l.724 2.352h.672l.73-2.352h.907l-.739 2.579c-.128.39-.19.659-.19.789 0 .21.035.365.102.466a.56.56 0 0 0 .17.29.5.5 0 0 0 .186.103c.07.02.13.03.16.031V13h-.715a.7.7 0 0 1-.142-.01.5.5 0 0 1-.09-.03.4.4 0 0 1-.07-.04.3.3 0 0 1-.06-.05l-.01-.01-.01-.01a.3.3 0 0 1-.04-.08.5.5 0 0 1-.02-.1c0-.02 0-.04.01-.06l.02-.07.02-.05.02-.05.02-.04.03-.05.02-.04.03-.05.03-.04.02-.03.03-.05.03-.03.02-.04h-.78l-.74-2.372zm-1.927 2.372v-2.579h-.778v2.58z"/>
+                        </svg>
+                        Download PDF Report
+                    </a>
+                    <a href="?handler=DownloadReport" class="btn btn-outline-secondary">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-filetype-json me-2" viewBox="0 0 16 16">
+                            <path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM3.527 11.85h-.893l.823 1.71h.032l.81-1.71h-.772Zm1.037 0 .002 2.66h-.78v-2.66h.78Zm2.532 0-.001 2.66h-.78v-2.66h.78Zm.78-.78h.78v3.44h-.78z"/>
+                            <path d="M5.521 11.85H4.71v3.44h.81c.647 0 1.107-.378 1.107-1.222 0-.665-.39-1.218-1.107-1.218Zm.81 1.73c.18 0 .288-.107.288-.313v-.14c0-.206-.108-.313-.288-.313h-.52v.766h.52Zm-2.56-1.73v3.44h.78v-1.723h.59c.392 0 .672-.206.672-.588 0-.382-.28-.588-.672-.588h-.59v-.541h-.78Zm.78.437h.59c.16 0 .266.107.266.26 0 .154-.106.26-.266.26h-.59z"/>
+                        </svg>
+                        Download JSON Report
+                    </a>
+                </div>
+            </div>
+
+            <h2>Results by category</h2>
+            <div class="accordion mb-4" id="categoriesAccordion">
+                @{
+                    var idx = 0;
+                    foreach (var cat in Model.ScanReport.Categories)
+                    {
+                        var id = "cat-" + idx;
+                        var show = idx == 0 ? "show" : "";
+                        var collapsed = idx == 0 ? "" : "collapsed";
+                        <div class="accordion-item">
+                            <h3 class="accordion-header">
+                                <button class="accordion-button @collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@id" aria-expanded="@(idx == 0)" aria-controls="@id">
+                                    @cat.Name (@cat.Checks.Count)
+                                </button>
+                            </h3>
+                            <div id="@id" class="accordion-collapse collapse @show" data-bs-parent="#categoriesAccordion">
+                                <div class="accordion-body">
+                                    @foreach (var ch in cat.Checks)
+                                    {
+                                        var badgeClass = ch.Status == "PASS" ? "bg-success" : ch.Status == "WARNING" ? "bg-warning text-dark" : "bg-danger";
+                                        var isPass = ch.Status == "PASS";
+                                        <div class="mb-4 p-3 border rounded check-item" data-status="@ch.Status">
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <span class="badge @badgeClass">@ch.Status</span>
+                                                @if (!isPass && ch.ItemCount > 0)
+                                                {
+                                                    <span class="badge bg-secondary">@ch.ItemCount issue@(ch.ItemCount == 1 ? "" : "s")</span>
+                                                }
+                                                <span class="text-muted small ms-auto">@ch.DurationMs ms</span>
+                                            </div>
+
+                                            @if (isPass)
+                                            {
+                                                <strong>@ch.Title</strong>
+                                                @if (!string.IsNullOrEmpty(ch.Message))
+                                                {
+                                                    <p class="mb-0 mt-1 text-muted small">@ch.Message</p>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <div class="mb-2">
+                                                    <strong class="text-primary">@(ch.WhatsWrong ?? ch.Title)</strong>
+                                                    @if (string.IsNullOrEmpty(ch.WhatsWrong) && !string.IsNullOrEmpty(ch.Message))
+                                                    {
+                                                        <p class="mb-0 mt-1">@ch.Message</p>
+                                                    }
+                                                </div>
+
+                                                @if (!string.IsNullOrEmpty(ch.WhyItMatters))
+                                                {
+                                                    <div class="mb-2">
+                                                        <small class="text-muted">@ch.WhyItMatters</small>
+                                                    </div>
+                                                }
+
+                                                @if (!string.IsNullOrEmpty(ch.WhatToDoNext))
+                                                {
+                                                    <div class="mb-2">
+                                                        <small class="fw-bold text-success">Next: @ch.WhatToDoNext</small>
+                                                    </div>
+                                                }
+
+                                                @if (ch.Items != null && ch.Items.Count > 0)
+                                                {
+                                                    <details class="mt-3">
+                                                        <summary class="text-muted small cursor-pointer">Details (@ch.Items.Count)</summary>
+                                                        <ul class="small mt-2 mb-0">
+                                                            @foreach (var item in ch.Items.Take(20))
+                                                            {
+                                                                <li class="font-monospace">@item</li>
+                                                            }
+                                                            @if (ch.Items.Count > 20)
+                                                            {
+                                                                <li class="text-muted">... and @(ch.Items.Count - 20) more</li>
+                                                            }
+                                                        </ul>
+                                                    </details>
+                                                }
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        idx++;
+                    }
+                }
+            </div>
+        }
+    }
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            initProgressIndicator();
+            initStatusCardFiltering();
+        });
+        
+        function initProgressIndicator() {
+            const form = document.querySelector('form');
+            const scanButton = document.getElementById('scanButton');
+            const scanSpinner = document.getElementById('scanSpinner');
+            const scanButtonText = document.getElementById('scanButtonText');
+            const progressText = document.getElementById('progressText');
+            
+            if (!form || !scanButton) return;
+            
+            form.addEventListener('submit', function() {
+                scanSpinner.classList.remove('spinner-hidden');
+                scanButton.disabled = true;
+                scanButtonText.textContent = 'Scanning...';
+                
+                if (progressText) {
+                    progressText.style.display = 'block';
+                    progressText.textContent = 'Scanning schema… analyzing constraints…';
+                }
+            });
+        }
+        
+        function initStatusCardFiltering() {
+            const statusCards = document.querySelectorAll('.status-card');
+            const checkItems = document.querySelectorAll('.check-item');
+            const clearFiltersButton = document.getElementById('clearFiltersButton');
+            let activeFilter = null;
+            
+            if (statusCards.length === 0) return;
+            
+            function updateClearButtonVisibility() {
+                if (clearFiltersButton) {
+                    clearFiltersButton.style.display = activeFilter !== null ? 'block' : 'none';
+                }
+            }
+            
+            function clearFilters() {
+                activeFilter = null;
+                statusCards.forEach(function(c) {
+                    c.classList.remove('active');
+                });
+                filterCheckItems(checkItems, null);
+                updateClearButtonVisibility();
+            }
+            
+            if (clearFiltersButton) {
+                clearFiltersButton.addEventListener('click', clearFilters);
+            }
+            
+            statusCards.forEach(function(card) {
+                card.addEventListener('click', function() {
+                    const status = this.getAttribute('data-status');
+                    
+                    if (activeFilter === status) {
+                        activeFilter = null;
+                        this.classList.remove('active');
+                    } else {
+                        activeFilter = status;
+                        statusCards.forEach(function(c) {
+                            c.classList.remove('active');
+                        });
+                        this.classList.add('active');
+                    }
+                    
+                    filterCheckItems(checkItems, activeFilter);
+                    updateClearButtonVisibility();
+                });
+            });
+        }
+        
+        function filterCheckItems(checkItems, filter) {
+            checkItems.forEach(function(item) {
+                if (filter === null) {
+                    item.style.display = '';
+                } else {
+                    const itemStatus = item.getAttribute('data-status');
+                    item.style.display = itemStatus === filter ? '' : 'none';
+                }
+            });
+        }
+    </script>
+}

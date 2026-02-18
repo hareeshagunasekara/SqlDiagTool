@@ -1,6 +1,9 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlDiagTool.Web", "SqlDiagTool.Web \SqlDiagTool.Web.csproj", "{CC620D4A-5156-4A32-B34D-F875B338CC96}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlDiagTool", "SqlDiagTool\SqlDiagTool.csproj", "{79B7F7C3-0B17-4BF8-A6B9-D62947B3E410}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SqlDiagTool.Shared", "SqlDiagTool.Shared\SqlDiagTool.Shared.csproj", "{9B3237FE-625E-4ECF-B7D6-BFB881F53A1F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -12,5 +15,13 @@ Global
 		{79B7F7C3-0B17-4BF8-A6B9-D62947B3E410}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79B7F7C3-0B17-4BF8-A6B9-D62947B3E410}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79B7F7C3-0B17-4BF8-A6B9-D62947B3E410}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC620D4A-5156-4A32-B34D-F875B338CC96}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC620D4A-5156-4A32-B34D-F875B338CC96}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC620D4A-5156-4A32-B34D-F875B338CC96}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC620D4A-5156-4A32-B34D-F875B338CC96}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9B3237FE-625E-4ECF-B7D6-BFB881F53A1F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9B3237FE-625E-4ECF-B7D6-BFB881F53A1F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9B3237FE-625E-4ECF-B7D6-BFB881F53A1F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9B3237FE-625E-4ECF-B7D6-BFB881F53A1F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
