@@ -9,7 +9,7 @@ The SQL Server Diagnostic Tool is designed to help database administrators and d
 ### Key Capabilities
 
 - **Multi-Database Support**: Configure multiple database targets and switch between them seamlessly
-- **Comprehensive Checks**: 13+ built-in checks covering keys, constraints, indexes, data types, and more
+- **Comprehensive Checks**: 28 built-in checks covering keys, constraints, referential integrity, indexes, data types, and more
 - **Rich Reporting**: Generate detailed reports in JSON and PDF formats
 - **Demo Mode**: Includes demo databases with known issues for testing and learning
 - **Web-Based UI**: Modern ASP.NET Core web interface for easy interaction
@@ -22,13 +22,18 @@ The tool performs comprehensive analysis across multiple categories:
 
 #### Keys & Constraints
 - **Missing Primary Keys**: Identifies tables without primary keys
+- **Nullable or Disabled Primary Key**: Finds PK columns that are nullable or PK constraint disabled
+- **Natural vs Surrogate Key Heuristic**: Flags tables with both Id-like and natural-key-like columns for review
+- **Composite Primary Key Review**: Lists tables with composite PKs for consistency review
+- **Duplicate Identity Candidates**: Tables with multiple single-column unique indexes (review intended PK)
 - **Missing Foreign Keys**: Detects relationships without foreign key constraints
+- **Referential Integrity**: FK target not unique, nullable FK columns, cascade rules review, circular FK dependencies, 1:1 missing unique on FK, polymorphic type+id pairs without FK
 - **Missing Unique Constraints**: Finds columns that should have uniqueness constraints
 - **Missing Check Constraints**: Identifies status-like columns without validation constraints
 - **Orphan Records**: Detects child rows referencing non-existent parent records
 - **Foreign Key Type Mismatches**: Finds type inconsistencies between FK and referenced columns
 
-#### Index Analysis
+#### Index Health
 - **Heap Tables**: Identifies tables without clustered indexes
 - **Index Fragmentation**: Detects fragmented indexes that need maintenance
 - **Unused Indexes**: Finds indexes that are never used (wasting space and slowing writes)
@@ -38,9 +43,9 @@ The tool performs comprehensive analysis across multiple categories:
 - **Money Stored as Float**: Detects currency columns using float/real (precision issues)
 - **Extreme Nullable Ratio**: Identifies tables with excessive nullable columns (>50%)
 - **Junction Table Issues**: Finds many-to-many tables missing composite keys
-
-#### Performance
-- **Top Slow Queries**: Reports queries with high execution times
+- **Inconsistent Formats**: Flags inconsistent casing/whitespace in status-like columns
+- **Broken Business Rules**: Detects date and amount logic violations
+- **Status/Type Constraint Consistency**: Finds status/type columns where some tables enforce check constraints and others do not
 
 ### Reporting Features
 
@@ -52,18 +57,18 @@ The tool performs comprehensive analysis across multiple categories:
   - What to do next
   - Specific details (table names, column names, etc.)
 - **Export Options**:
-  - JSON reports for programmatic processing
-  - PDF reports for documentation and sharing
-- **Report History**: Automatic cleanup of old reports (configurable retention)
+  - JSON reports for programmatic processing (download on demand)
+  - PDF reports for documentation and sharing (download on demand)
+- **Category Filter**: Run all checks or filter by category (Keys & Constraints, Data Quality, etc.)
 
 ### Demo Databases
 
-The tool includes several pre-configured demo databases with known issues:
+The tool includes pre-configured demo databases with known issues:
 
-- **Demo – No primary keys**: Database with tables missing primary keys
-- **Demo – Clean**: Well-structured database that should pass all checks
-- **Demo – RetailOps Legacy**: Realistic legacy database scenario
+- **Demo – RetailOps Legacy**: Realistic legacy retail operations database
 - **Demo – MedTrack Clinical**: Healthcare database scenario
+- **Demo – ManufacturingOps Industrial**: Manufacturing/plant-floor database scenario
+- **Demo – LegalCase DB**: Legal/case-management scenario
 
 ## Installation
 
@@ -120,8 +125,7 @@ Configure your database targets in `appsettings.json` or `appsettings.Developmen
       }
     ],
     "DemoServerConnectionString": "Server=localhost;Integrated Security=true;",
-    "AutoCreateDemoDatabases": true,
-    "ReportsDirectory": ""
+    "AutoCreateDemoDatabases": true
   }
 }
 ```
@@ -137,7 +141,6 @@ Configure your database targets in `appsettings.json` or `appsettings.Developmen
 
 - **DemoServerConnectionString**: Connection string for demo database server (optional)
 - **AutoCreateDemoDatabases**: Automatically create demo databases on startup (default: true)
-- **ReportsDirectory**: Directory for saving reports (empty = default: `reports` folder)
 
 ### Security Notes
 
@@ -156,18 +159,20 @@ Configure your database targets in `appsettings.json` or `appsettings.Developmen
    dotnet run
    ```
 
-2. **Open your browser** to the URL shown in the console (typically `https://localhost:5001` or `http://localhost:5000`)
+2. **Open your browser** to the URL shown in the console (typically `https://localhost:5001` or `http://localhost:5000`). The app redirects to `/diagnostics`.
 
 3. **Select a database** from the dropdown (populated from your `DatabaseTargets` configuration)
 
-4. **Click "Scan"** to run all diagnostic checks
+4. **(Optional)** Choose a **category** to run a subset of checks, or leave as "All categories" for a full scan.
 
-5. **Review the results**:
+5. **Click "Run Diagnostics"** to execute the checks.
+
+6. **Review the results**:
    - Summary cards show counts of Pass/Warning/Fail checks
    - Results are grouped by category in expandable sections
    - Each check shows status, duration, and detailed information
 
-6. **Export reports**:
+7. **Export reports**:
    - Click "Download PDF Report" for a formatted PDF document
    - Click "Download JSON Report" for machine-readable JSON data
 
@@ -196,13 +201,23 @@ SqlDiagTool.sln
 │   ├── Checks/                     # Individual check implementations
 │   │   ├── IStructureCheck.cs     # Check interface
 │   │   ├── CheckRegistry.cs       # Registry of all checks
-│   │   └── [13+ check classes]    # Specific check implementations
+│   │   ├── SqlHelper.cs           # Shared connection/query helpers
+│   │   ├── ReferentialIntegrityQueries.cs  # Shared SQL for FK checks
+│   │   ├── DataQuality/           # Duplicate records, inconsistent formats
+│   │   ├── DataTypeConsistency/   # FK type mismatch, money as float, business rules
+│   │   ├── IndexHealth/           # Missing/unused indexes, fragmentation
+│   │   ├── KeysAndConstraints/    # PK, unique, check constraints
+│   │   ├── ReferentialIntegrity/  # Missing FKs, orphans, cascade, circular
+│   │   ├── SchemaAndStructure/    # Heaps, nullable ratio, junction
+│   │   └── SchemaOverview/        # Schema summary
 │   ├── Runner/                     # DiagnosticsRunner - executes checks
 │   ├── Reporting/                  # Report generation
 │   │   ├── CategorizedReportBuilder.cs
 │   │   ├── PdfReportGenerator.cs
-│   │   ├── JsonReportWriter.cs
-│   │   └── CheckFriendlyCopy.cs
+│   │   ├── CheckFriendlyCopy.cs
+│   │   ├── ReportDisplayNames.cs
+│   │   ├── FileHelper.cs
+│   │   └── ScanReportDtos.cs
 │   └── Demo/                       # Demo database provisioning
 │
 └── SqlDiagTool.Web/
@@ -236,30 +251,46 @@ SqlDiagTool.sln
 
 ## Available Checks
 
-The tool includes 13 built-in checks:
+The tool includes 28 built-in checks:
 
 | Check | Category | Code | Description |
 |-------|----------|------|-------------|
 | Missing Primary Keys | Keys & Constraints | `MISSING_PK` | Finds tables without primary keys |
-| Heap Tables | Index Analysis | `HEAP_TABLES` | Identifies tables without clustered indexes |
-| Extreme Nullable Ratio | Data Quality | `EXTREME_NULLABLE_RATIO` | Tables with >50% nullable columns |
-| Suspected Junction Missing Key | Keys & Constraints | `JUNCTION_MISSING_KEY` | Many-to-many tables without composite keys |
+| Heap Tables | Schema & Structure | `HEAP_TABLES` | Identifies tables without clustered indexes |
+| Extreme Nullable Ratio | Schema & Structure | `EXTREME_NULLABLE_RATIO` | Tables with >50% nullable columns |
+| Suspected Junction Missing Key | Schema & Structure | `JUNCTION_MISSING_KEY` | Many-to-many tables without composite keys |
 | Missing Check Constraints | Keys & Constraints | `MISSING_CHECK_CONSTRAINTS` | Status-like columns without validation |
 | Missing Unique Constraints | Keys & Constraints | `MISSING_UNIQUE_CONSTRAINTS` | Columns that should be unique |
-| Missing Foreign Keys | Keys & Constraints | `MISSING_FOREIGN_KEYS` | Relationships without FK constraints |
-| Orphan Records | Data Quality | `ORPHAN_RECORDS` | Child rows with missing parents |
-| Foreign Key Type Mismatch | Data Quality | `FK_TYPE_MISMATCH` | Type inconsistencies in FKs |
-| Money Stored as Float | Data Quality | `MONEY_AS_FLOAT` | Currency columns using float/real |
-| Missing Index Suggestions | Index Analysis | `MISSING_INDEX_SUGGESTIONS` | SQL Server index recommendations |
-| Unused Indexes | Index Analysis | `UNUSED_INDEXES` | Indexes never used |
-| Fragmentation | Index Analysis | `FRAGMENTATION` | Fragmented indexes needing maintenance |
-| Top Slow Queries | Performance | `TOP_SLOW_QUERIES` | Queries with high execution times |
+| Missing Foreign Keys | Referential Integrity | `MISSING_FOREIGN_KEYS` | Relationships without FK (missing FK / app-managed) |
+| Orphan Records | Referential Integrity | `ORPHAN_RECORDS` | Child rows with missing parents |
+| Foreign Key Type Mismatch | Data Type Consistency | `FK_TYPE_MISMATCH` | Type inconsistencies in FKs |
+| Money Stored as Float | Data Type Consistency | `MONEY_AS_FLOAT` | Currency columns using float/real |
+| Missing Index Suggestions | Index Health | `MISSING_INDEX_SUGGESTIONS` | SQL Server index recommendations |
+| Unused Indexes | Index Health | `UNUSED_INDEXES` | Indexes never used |
+| Fragmentation | Index Health | `FRAGMENTATION` | Fragmented indexes needing maintenance |
+| Schema Summary | Schema Overview | `SCHEMA_SUMMARY` | Overview of tables, columns, relationships |
+| Duplicate Records | Data Quality | `DUPLICATE_RECORDS` | Duplicate values in key-like columns |
+| Nullable or Disabled Primary Key | Keys & Constraints | `NULLABLE_OR_DISABLED_PK` | PK columns nullable or constraint disabled |
+| Natural vs Surrogate Key Heuristic | Keys & Constraints | `NATURAL_SURROGATE_HEURISTIC` | Tables with both Id-like and natural-key-like columns |
+| Composite Primary Key Review | Keys & Constraints | `COMPOSITE_PK_REVIEW` | Tables with composite PKs; flag for review |
+| Multiple Single-Column Unique Indexes | Keys & Constraints | `DUPLICATE_IDENTITY_CANDIDATES` | Multiple single-column unique indexes; review intended PK |
+| FK Target Not Unique | Referential Integrity | `FK_TARGET_NOT_UNIQUE` | FKs referencing non-unique/non-PK column |
+| Nullable FK Columns | Referential Integrity | `NULLABLE_FK_COLUMNS` | FK columns that allow NULL; review if required |
+| FK Cascade Rules | Referential Integrity | `FK_CASCADE_RULES` | Delete/update action per FK for review |
+| Circular FK Dependencies | Referential Integrity | `CIRCULAR_FK` | Cycles in FK graph |
+| 1:1 Missing Unique on FK | Referential Integrity | `ONE_TO_ONE_MISSING_UNIQUE` | FK column may represent 1:1; add UNIQUE if so |
+| Polymorphic Relationship (No FK) | Referential Integrity | `POLYMORPHIC_RELATIONSHIP` | Polymorphic-style type+id columns with no FK |
+| Inconsistent Formats | Data Quality | `INCONSISTENT_FORMATS` | Inconsistent casing/whitespace in status-like columns |
+| Broken Business Rules | Data Type Consistency | `BROKEN_BUSINESS_RULES` | Date and amount logic violations |
+| Status/Type Constraint Consistency | Data Type Consistency | `STATUS_TYPE_CONSTRAINT_CONSISTENCY` | Inconsistent status/type constraint enforcement across tables |
+
+**Manual / policy:** Primary key stability (business meaning of the key does not change over time) cannot be inferred from schema; review with the team where it matters. Many-to-many without a junction table is design/semantic and hard to auto-detect—treat as manual review or an optional heuristic if implemented.
 
 ### Adding Custom Checks
 
 To add a new check:
 
-1. Create a class implementing `IStructureCheck`:
+1. Create a class implementing `IStructureCheck` in the appropriate category folder under `SqlDiagTool/Checks/` (e.g. `ReferentialIntegrity/`, `KeysAndConstraints/`), or in `Checks/` for shared/uncategorized code. Keep the namespace `SqlDiagTool.Checks`.
    ```csharp
    public sealed class MyCustomCheck : IStructureCheck
    {
@@ -276,16 +307,16 @@ To add a new check:
    }
    ```
 
-2. Register it in `CheckRegistry.All`:
+2. Register it in `CheckRegistry.CreateAll`:
    ```csharp
-   public static IReadOnlyList<IStructureCheck> All => new IStructureCheck[]
+   return new IStructureCheck[]
    {
        // ... existing checks ...
        new MyCustomCheck()
    };
    ```
 
-3. Add friendly copy in `CheckFriendlyCopy` (optional but recommended)
+3. Add user-friendly copy in `CheckFriendlyCopy`
 
 ## Reporting
 
@@ -318,7 +349,7 @@ JSON reports provide:
 - Structured data for integration
 - Easy parsing for automation
 
-Reports are saved to the `reports` directory (or configured `ReportsDirectory`) with timestamps. Old reports are automatically cleaned up (default: keep last 10).
+Reports are generated in-memory and available for download after a scan. JSON and PDF exports are served on demand; the report is cached for 30 minutes after the scan.
 
 ## Demo Features
 
@@ -326,10 +357,10 @@ The application includes demo database provisioning for testing and demonstratio
 
 ### Demo Databases
 
-1. **Demo – No primary keys**: Simple database with tables missing primary keys
-2. **Demo – Clean**: Well-structured database that should pass checks
-3. **Demo – RetailOps Legacy**: Realistic legacy retail operations scenario
-4. **Demo – MedTrack Clinical**: Healthcare database scenario
+1. **Demo – RetailOps Legacy**: Realistic legacy retail operations scenario
+2. **Demo – MedTrack Clinical**: Healthcare database scenario
+3. **Demo – ManufacturingOps Industrial**: Manufacturing/plant-floor scenario
+4. **Demo – LegalCase DB**: Legal/case-management (1:1, circular FK, polymorphic)
 
 ### Enabling Demo Mode
 
@@ -338,7 +369,7 @@ Demo databases are automatically created on startup if:
 - `DemoServerConnectionString` is configured
 - The SQL Server instance is accessible
 
-Demo databases are prefixed with `SqlDiagTool_Demo_` or use the configured database name.
+Demo databases use `RetailOps_Legacy`, `MedTrack_Clinical`, `ManufacturingOps_Industrial`, and `LegalCase_Db` (or the configured database names).
 
 ## Development
 

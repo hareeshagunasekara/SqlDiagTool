@@ -4,7 +4,7 @@ using SqlDiagTool.Shared;
 
 namespace SqlDiagTool.Checks;
 
-// Indexes with fragmentation above threshold (e.g. 10%).
+// Indexes with fragmentation above threshold
 public sealed class FragmentationCheck : IStructureCheck
 {
     public int Id => 13;

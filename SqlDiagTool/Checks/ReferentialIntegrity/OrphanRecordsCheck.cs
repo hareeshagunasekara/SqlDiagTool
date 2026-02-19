@@ -1,12 +1,18 @@
 using System.Diagnostics;
 using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using SqlDiagTool.Shared;
 
 namespace SqlDiagTool.Checks;
 
-// Rows in child table that reference non-existing parent (discovered via same-name columns, parent has PK).
+// Rows in child table that reference non-existing parent
 public sealed class OrphanRecordsCheck : IStructureCheck
 {
+    private readonly ILogger _logger;
+
+    public OrphanRecordsCheck(ILogger? logger = null) => _logger = logger ?? NullLogger.Instance;
+
     public int Id => 8;
     public string Name => "Orphan Records";
     public string Category => "Referential Integrity";
@@ -41,24 +47,29 @@ public sealed class OrphanRecordsCheck : IStructureCheck
         try
         {
             var rels = await SqlHelper.RunQueryAsync(connectionString, RelationshipsSql);
-            var items = new List<string>();
+
+            var queries = new List<(string Label, string InnerSql)>();
             foreach (var r in rels)
             {
                 if (r.Length < 5) continue;
-                try
-                {
-                    var cs = r[0]; var ct = r[1]; var cc = r[2]; var ps = r[3]; var pt = r[4];
-                    var q = $"SELECT COUNT(*) FROM {Q(cs)}.{Q(ct)} c LEFT JOIN {Q(ps)}.{Q(pt)} p ON c.{Q(cc)} = p.{Q(cc)} WHERE p.{Q(cc)} IS NULL";
-                    var countRows = await SqlHelper.RunQueryAsync(connectionString, q);
-                    var count = countRows.Count > 0 && long.TryParse(countRows[0][0], out var n) ? n : 0;
-                    if (count > 0)
-                        items.Add($"{ct}.{cc} ({count} orphan(s))");
-                }
-                catch
-                {
-                    // skip
-                }
+                var cs = r[0]; var ct = r[1]; var cc = r[2]; var ps = r[3]; var pt = r[4];
+                var sql = $"SELECT COUNT(*) AS cnt FROM {SqlHelper.QuoteIdentifier(cs)}.{SqlHelper.QuoteIdentifier(ct)} c " +
+                          $"LEFT JOIN {SqlHelper.QuoteIdentifier(ps)}.{SqlHelper.QuoteIdentifier(pt)} p " +
+                          $"ON c.{SqlHelper.QuoteIdentifier(cc)} = p.{SqlHelper.QuoteIdentifier(cc)} " +
+                          $"WHERE p.{SqlHelper.QuoteIdentifier(cc)} IS NULL";
+                queries.Add(($"{ct}.{cc}", sql));
             }
+
+            var batchResults = await SqlHelper.RunBatchedUnionAsync(connectionString, queries, logger: _logger);
+
+            var items = new List<string>();
+            foreach (var (label, rows) in batchResults)
+            {
+                var count = rows.Count > 0 && long.TryParse(rows[0][0], out var n) ? n : 0;
+                if (count > 0)
+                    items.Add($"{label} ({count} orphan(s))");
+            }
+
             sw.Stop();
             if (items.Count == 0)
                 return new TestResult(Name, Status.PASS, "No orphan records found", sw.ElapsedMilliseconds, Id, Category, Code);
@@ -72,6 +83,4 @@ public sealed class OrphanRecordsCheck : IStructureCheck
             return new TestResult(Name, Status.FAIL, $"Query failed | Code: {ex.Number} | {ex.Message}", sw.ElapsedMilliseconds, Id, Category, Code);
         }
     }
-
-    private static string Q(string id) => "[" + id.Replace("]", "]]") + "]";
 }

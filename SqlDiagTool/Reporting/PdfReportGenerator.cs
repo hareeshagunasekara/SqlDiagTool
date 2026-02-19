@@ -31,8 +31,6 @@ public static class PdfReportGenerator
                         {
                             column.Item().Text("SQL Diagnostics Report").FontSize(20f).Bold().FontColor(Colors.Blue.Darken2);
                             column.Item().Text($"Database: {report.Database.Name}").FontSize(12f).FontColor(Colors.Grey.Darken1);
-                            if (!string.IsNullOrEmpty(report.Database.Server))
-                                column.Item().Text($"Server: {report.Database.Server}").FontSize(10f).FontColor(Colors.Grey.Darken1);
                             column.Item().Text($"Scanned: {report.Database.ScannedAt:yyyy-MM-dd HH:mm:ss} UTC").FontSize(10f).FontColor(Colors.Grey.Darken1);
                         });
                     });
@@ -90,19 +88,19 @@ public static class PdfReportGenerator
                     
                     column.Item().Row(row =>
                     {
-                        row.ConstantItem(80f).Text("Pass:").FontSize(11f);
+                        row.ConstantItem(80f).Text(ReportDisplayNames.GetStatusDisplayName("PASS") + ":").FontSize(11f);
                         row.AutoItem().Text(_summary.Pass.ToString()).FontSize(11f).Bold().FontColor(Colors.Green.Darken2);
                     });
                     
                     column.Item().Row(row =>
                     {
-                        row.ConstantItem(80f).Text("Warnings:").FontSize(11f);
+                        row.ConstantItem(80f).Text(ReportDisplayNames.GetStatusDisplayName("WARNING") + ":").FontSize(11f);
                         row.AutoItem().Text(_summary.Warn.ToString()).FontSize(11f).Bold().FontColor(Colors.Orange.Darken2);
                     });
                     
                     column.Item().Row(row =>
                     {
-                        row.ConstantItem(80f).Text("Failures:").FontSize(11f);
+                        row.ConstantItem(80f).Text(ReportDisplayNames.GetStatusDisplayName("FAIL") + ":").FontSize(11f);
                         row.AutoItem().Text(_summary.Fail.ToString()).FontSize(11f).Bold().FontColor(Colors.Red.Darken2);
                     });
                     
@@ -178,7 +176,7 @@ public static class PdfReportGenerator
                             .PaddingHorizontal(0.5f, Unit.Centimetre)
                             .PaddingVertical(0.2f, Unit.Centimetre)
                             .Background(statusColor)
-                            .Text(_check.Status)
+                            .Text(string.IsNullOrEmpty(_check.StatusDisplay) ? ReportDisplayNames.GetStatusDisplayName(_check.Status) : _check.StatusDisplay)
                             .FontSize(9f)
                             .Bold()
                             .FontColor(Colors.White);
@@ -229,7 +227,7 @@ public static class PdfReportGenerator
                         if (!string.IsNullOrEmpty(_check.WhatToDoNext))
                             column.Item()
                                 .PaddingTop(0.3f, Unit.Centimetre)
-                                .Text($"Next: {_check.WhatToDoNext}")
+                                .Text($"Suggested tip: {_check.WhatToDoNext}")
                                 .FontSize(10f)
                                 .Bold()
                                 .FontColor(Colors.Green.Darken2);

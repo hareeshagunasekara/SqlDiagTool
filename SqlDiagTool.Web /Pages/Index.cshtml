@@ -1,11 +1,16 @@
 @page "/diagnostics"
 @model SqlDiagTool.Web.Pages.IndexModel
 @using SqlDiagTool.Shared
+@using SqlDiagTool.Reporting
 @{
     ViewData["Title"] = "SQL Diagnostics";
-    var fail = Model.Results?.Where(r => r.Status == Status.FAIL).ToList() ?? new List<TestResult>();
-    var warning = Model.Results?.Where(r => r.Status == Status.WARNING).ToList() ?? new List<TestResult>();
-    var pass = Model.Results?.Where(r => r.Status == Status.PASS).ToList() ?? new List<TestResult>();
+    var diagnosticResults = Model.Results?.Where(r => !string.Equals(r.Code, "SCHEMA_SUMMARY", StringComparison.OrdinalIgnoreCase)) ?? Enumerable.Empty<TestResult>();
+    var fail = diagnosticResults.Where(r => r.Status == Status.FAIL).ToList();
+    var warning = diagnosticResults.Where(r => r.Status == Status.WARNING).ToList();
+    var pass = diagnosticResults.Where(r => r.Status == Status.PASS).ToList();
+    var schemaSummary = Model.ScanReport?.Categories?
+        .SelectMany(c => c.Checks ?? new List<ScanReportCheckEntry>())
+        .FirstOrDefault(ch => string.Equals(ch.Code, "SCHEMA_SUMMARY", StringComparison.OrdinalIgnoreCase));
 }
 
 <style>
@@ -28,8 +33,13 @@
             <div class="scan-panel-grid">
                 <div class="scan-panel-left">
                     <label class="form-label" for="SelectedTargetId">Target Database</label>
-                    <select class="form-select" id="SelectedTargetId" name="SelectedTargetId" asp-items="Model.DatabaseTargets"></select>
+                    <select class="form-select" id="SelectedTargetId" name="SelectedTargetId" asp-for="SelectedTargetId" asp-items="Model.DatabaseTargets"></select>
                     <span asp-validation-for="SelectedTargetId" class="text-danger small"></span>
+                </div>
+
+                <div class="scan-panel-category">
+                    <label class="form-label" for="SelectedCategory">Category</label>
+                    <select class="form-select" id="SelectedCategory" name="SelectedCategory" asp-for="SelectedCategory" asp-items="Model.CategoryOptions"></select>
                 </div>
 
                 <div class="scan-panel-middle">
@@ -65,7 +75,7 @@
                 <div class="card border-success status-card" data-status="PASS">
                     <div class="card-body text-center">
                         <i class="bi bi-check-circle-fill status-card-icon pass"></i>
-                        <h5 class="card-title text-success mb-2">PASS</h5>
+                        <h5 class="card-title text-success mb-2">@ReportDisplayNames.GetStatusDisplayName("PASS")</h5>
                         <p class="card-text display-6 mb-0">@pass.Count</p>
                     </div>
                 </div>
@@ -74,7 +84,7 @@
                 <div class="card border-warning status-card" data-status="WARNING">
                     <div class="card-body text-center">
                         <i class="bi bi-exclamation-triangle-fill status-card-icon warn"></i>
-                        <h5 class="card-title text-warning mb-2">WARN</h5>
+                        <h5 class="card-title text-warning mb-2">@ReportDisplayNames.GetStatusDisplayName("WARNING")</h5>
                         <p class="card-text display-6 mb-0">@warning.Count</p>
                     </div>
                 </div>
@@ -83,7 +93,7 @@
                 <div class="card border-danger status-card" data-status="FAIL">
                     <div class="card-body text-center">
                         <i class="bi bi-x-circle-fill status-card-icon fail"></i>
-                        <h5 class="card-title text-danger mb-2">FAIL</h5>
+                        <h5 class="card-title text-danger mb-2">@ReportDisplayNames.GetStatusDisplayName("FAIL")</h5>
                         <p class="card-text display-6 mb-0">@fail.Count</p>
                     </div>
                 </div>
@@ -95,17 +105,28 @@
             <div class="download-section mb-4">
                 @if (Model.ScanReport.Summary != null)
                 {
-                    <div class="text-muted mb-3">Scan completed in @((Model.ScanReport.Summary.DurationMs / 1000.0).ToString("F1"))s</div>
+                    <div class="text-muted mb-2">Scan completed in @((Model.ScanReport.Summary.DurationMs / 1000.0).ToString("F1"))s</div>
+                    @if (!string.IsNullOrWhiteSpace(Model.SelectedCategory))
+                    {
+                        <div class="text-muted small mb-2">Results for category: @ReportDisplayNames.GetCategoryDisplayName(Model.SelectedCategory)</div>
+                    }
+                    @if (schemaSummary != null)
+                    {
+                        <div class="mb-3 p-3 rounded border bg-white shadow-sm">
+                            <div class="text-primary fw-semibold mb-1">Database Summary</div>
+                            <p class="mb-0 text-body">@schemaSummary.Message</p>
+                        </div>
+                    }
                 }
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="?handler=DownloadPdfReport" class="btn btn-primary">
+                    <a href="?handler=DownloadPdfReport&reportId=@Uri.EscapeDataString(Model.ReportId ?? "")" class="btn btn-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-pdf me-2" viewBox="0 0 16 16">
                             <path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2M9.5 3A1.5 1.5 0 0 0 11 4.5h2V14a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h5.5z"/>
                             <path d="M4.603 14.087a.81.81 0 0 1-.438-.42c-.195-.38-.273-.882-.273-1.507 0-.88.11-1.325.273-1.507.09-.18.24-.319.438-.421.2-.103.444-.17.732-.17.288 0 .532.067.732.17.2.102.348.24.438.421.164.182.273.627.273 1.507 0 .625-.078 1.127-.273 1.507a.81.81 0 0 1-.438.42c-.2.103-.444.17-.732.17-.288 0-.532-.067-.732-.17m.66-2.87c.08.285.213.49.4.597.19.108.42.163.69.163.27 0 .5-.055.69-.163a.99.99 0 0 0 .4-.597c.08-.285.12-.715.12-1.29 0-.575-.04-1.005-.12-1.29a.99.99 0 0 0-.4-.597c-.19-.108-.42-.163-.69-.163s-.5.055-.69.163a.99.99 0 0 0-.4.597c-.08.285-.12.715-.12 1.29 0 .575.04 1.005.12 1.29m2.96-1.895h.893l.724 2.352h.672l.73-2.352h.907l-.739 2.579c-.128.39-.19.659-.19.789 0 .21.035.365.102.466a.56.56 0 0 0 .17.29.5.5 0 0 0 .186.103c.07.02.13.03.16.031V13h-.715a.7.7 0 0 1-.142-.01.5.5 0 0 1-.09-.03.4.4 0 0 1-.07-.04.3.3 0 0 1-.06-.05l-.01-.01-.01-.01a.3.3 0 0 1-.04-.08.5.5 0 0 1-.02-.1c0-.02 0-.04.01-.06l.02-.07.02-.05.02-.05.02-.04.03-.05.02-.04.03-.05.03-.04.02-.03.03-.05.03-.03.02-.04h-.78l-.74-2.372zm-1.927 2.372v-2.579h-.778v2.58z"/>
                         </svg>
                         Download PDF Report
                     </a>
-                    <a href="?handler=DownloadReport" class="btn btn-outline-secondary">
+                    <a href="?handler=DownloadReport&reportId=@Uri.EscapeDataString(Model.ReportId ?? "")" class="btn btn-outline-secondary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-filetype-json me-2" viewBox="0 0 16 16">
                             <path fill-rule="evenodd" d="M14 4.5V14a2 2 0 0 1-2 2h-1v-1h1a1 1 0 0 0 1-1V4.5h-2A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v9H2V2a2 2 0 0 1 2-2h5.5zM3.527 11.85h-.893l.823 1.71h.032l.81-1.71h-.772Zm1.037 0 .002 2.66h-.78v-2.66h.78Zm2.532 0-.001 2.66h-.78v-2.66h.78Zm.78-.78h.78v3.44h-.78z"/>
                             <path d="M5.521 11.85H4.71v3.44h.81c.647 0 1.107-.378 1.107-1.222 0-.665-.39-1.218-1.107-1.218Zm.81 1.73c.18 0 .288-.107.288-.313v-.14c0-.206-.108-.313-.288-.313h-.52v.766h.52Zm-2.56-1.73v3.44h.78v-1.723h.59c.392 0 .672-.206.672-.588 0-.382-.28-.588-.672-.588h-.59v-.541h-.78Zm.78.437h.59c.16 0 .266.107.266.26 0 .154-.106.26-.266.26h-.59z"/>
@@ -116,29 +137,48 @@
             </div>
 
             <h2>Results by category</h2>
+            <p class="text-muted mb-3">Expand a category to see what was checked and what to fix.</p>
             <div class="accordion mb-4" id="categoriesAccordion">
                 @{
                     var idx = 0;
-                    foreach (var cat in Model.ScanReport.Categories)
+                    foreach (var cat in (Model.ScanReport.Categories ?? Enumerable.Empty<ScanReportCategory>()).Where(c => !string.Equals(c.Name, "Database overview", StringComparison.OrdinalIgnoreCase) && !string.Equals(c.Name, "Schema Overview", StringComparison.OrdinalIgnoreCase)))
                     {
+                        var catChecks = cat.Checks ?? new List<ScanReportCheckEntry>();
+                        var passCount = catChecks.Count(c => c.Status == "PASS");
+                        var warnCount = catChecks.Count(c => c.Status == "WARNING");
+                        var failCount = catChecks.Count(c => c.Status == "FAIL");
                         var id = "cat-" + idx;
                         var show = idx == 0 ? "show" : "";
                         var collapsed = idx == 0 ? "" : "collapsed";
                         <div class="accordion-item">
                             <h3 class="accordion-header">
-                                <button class="accordion-button @collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@id" aria-expanded="@(idx == 0)" aria-controls="@id">
-                                    @cat.Name (@cat.Checks.Count)
+                                <button class="accordion-button @collapsed d-flex align-items-center gap-2 flex-wrap" type="button" data-bs-toggle="collapse" data-bs-target="#@id" aria-expanded="@(idx == 0)" aria-controls="@id">
+                                    <span>@cat.Name</span>
+                                    <span class="category-summary-badges">
+                                        @if (passCount > 0)
+                                        {
+                                            <span class="category-badge category-badge-pass">@passCount passed</span>
+                                        }
+                                        @if (warnCount > 0)
+                                        {
+                                            <span class="category-badge category-badge-warn">@warnCount issue@(warnCount == 1 ? "" : "s") found</span>
+                                        }
+                                        @if (failCount > 0)
+                                        {
+                                            <span class="category-badge category-badge-fail">@failCount failed</span>
+                                        }
+                                    </span>
                                 </button>
                             </h3>
                             <div id="@id" class="accordion-collapse collapse @show" data-bs-parent="#categoriesAccordion">
                                 <div class="accordion-body">
-                                    @foreach (var ch in cat.Checks)
+                                    @foreach (var ch in cat.Checks ?? Enumerable.Empty<ScanReportCheckEntry>())
                                     {
                                         var badgeClass = ch.Status == "PASS" ? "bg-success" : ch.Status == "WARNING" ? "bg-warning text-dark" : "bg-danger";
                                         var isPass = ch.Status == "PASS";
                                         <div class="mb-4 p-3 border rounded check-item" data-status="@ch.Status">
                                             <div class="d-flex align-items-center gap-2 mb-2">
-                                                <span class="badge @badgeClass">@ch.Status</span>
+                                                <span class="badge @badgeClass">@(ch.StatusDisplay ?? ReportDisplayNames.GetStatusDisplayName(ch.Status))</span>
                                                 @if (!isPass && ch.ItemCount > 0)
                                                 {
                                                     <span class="badge bg-secondary">@ch.ItemCount issue@(ch.ItemCount == 1 ? "" : "s")</span>
@@ -174,14 +214,14 @@
                                                 @if (!string.IsNullOrEmpty(ch.WhatToDoNext))
                                                 {
                                                     <div class="mb-2">
-                                                        <small class="fw-bold text-success">Next: @ch.WhatToDoNext</small>
+                                                        <small class="fw-bold text-success">Suggested tip: @ch.WhatToDoNext</small>
                                                     </div>
                                                 }
 
                                                 @if (ch.Items != null && ch.Items.Count > 0)
                                                 {
                                                     <details class="mt-3">
-                                                        <summary class="text-muted small cursor-pointer">Details (@ch.Items.Count)</summary>
+                                                        <summary class="text-muted small cursor-pointer">View affected items (@ch.Items.Count)</summary>
                                                         <ul class="small mt-2 mb-0">
                                                             @foreach (var item in ch.Items.Take(20))
                                                             {

@@ -4,7 +4,7 @@ using SqlDiagTool.Shared;
 
 namespace SqlDiagTool.Checks;
 
-// Missing index suggestions from DMVs (current database).
+// Missing index suggestions from DMVs 
 public sealed class MissingIndexSuggestionsCheck : IStructureCheck
 {
     public int Id => 11;

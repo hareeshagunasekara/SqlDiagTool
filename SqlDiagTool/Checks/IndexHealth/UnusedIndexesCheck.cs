@@ -4,7 +4,7 @@ using SqlDiagTool.Shared;
 
 namespace SqlDiagTool.Checks;
 
-// Indexes with zero user seeks and zero user scans (usage stats).
+// Indexes with zero user seeks and zero user scans
 public sealed class UnusedIndexesCheck : IStructureCheck
 {
     public int Id => 12;

@@ -1,9 +1,11 @@
 namespace SqlDiagTool.Reporting;
 
-// DTOs for the categorized JSON report shape (database, summary, categories with checks).
+// DTOs for the categorized JSON report shape
 
 public sealed class ScanReport
 {
+    public int ReportFormatVersion { get; set; } = 1;
+
     public ScanReportDatabase Database { get; set; } = new();
     public ScanReportSummary Summary { get; set; } = new();
     public List<ScanReportCategory> Categories { get; set; } = new();
@@ -35,6 +37,7 @@ public sealed class ScanReportCheckEntry
     public int Id { get; set; }
     public string Code { get; set; } = "";
     public string Status { get; set; } = "";
+    public string? StatusDisplay { get; set; }
     public string Title { get; set; } = "";
     public string Message { get; set; } = "";
     public List<string>? Items { get; set; }

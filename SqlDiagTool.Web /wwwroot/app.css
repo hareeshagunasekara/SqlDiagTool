@@ -82,12 +82,13 @@ h1:focus {
 
 .scan-panel .scan-panel-grid {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: 1fr 1fr auto auto;
     gap: 1rem;
     align-items: end;
 }
 
-.scan-panel-left {
+.scan-panel-left,
+.scan-panel-category {
     min-width: 0;
 }
 
@@ -134,6 +135,10 @@ h1:focus {
     border-width: 1px;
 }
 
+.status-card .card-body {
+    padding: 0.75rem 1rem;
+}
+
 .status-card:hover {
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
     transform: translateY(-2px);
@@ -146,8 +151,19 @@ h1:focus {
 }
 
 .status-card-icon {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.status-card .card-title {
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.status-card .display-6 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    margin-bottom: 0;
 }
 
 .status-card-icon.pass {
@@ -213,17 +229,49 @@ h1:focus {
     transition: opacity 0.15s ease-in-out;
 }
 
+/* Category summary badges */
+.category-summary-badges {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.category-badge {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    border-radius: 0.25rem;
+    white-space: nowrap;
+}
+
+.category-badge-pass {
+    background-color: rgba(25, 135, 84, 0.15);
+    color: #198754;
+}
+
+.category-badge-warn {
+    background-color: rgba(255, 193, 7, 0.25);
+    color: #856404;
+}
+
+.category-badge-fail {
+    background-color: rgba(220, 53, 69, 0.15);
+    color: #dc3545;
+}
+
 /* Responsive adjustments for status cards */
 @media (max-width: 576px) {
     .status-card-icon {
-        font-size: 2rem;
+        font-size: 1.25rem;
     }
     
     .status-card .card-title {
-        font-size: 1rem;
+        font-size: 0.875rem;
     }
     
     .status-card .display-6 {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 }

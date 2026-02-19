@@ -7,7 +7,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<SqlDiagOptions>(builder.Configuration.GetSection(SqlDiagOptions.SectionName));
 builder.Services.AddSingleton<DatabaseTargetService>();
-builder.Services.AddSingleton<DiagnosticsRunner>(_ => new DiagnosticsRunner(CheckRegistry.All));
+builder.Services.AddSingleton<DiagnosticsRunner>(sp =>
+    new DiagnosticsRunner(CheckRegistry.CreateAll(sp.GetRequiredService<ILoggerFactory>())));
+builder.Services.AddMemoryCache();
 builder.Services.AddHostedService<DemoProvisionHostedService>();
 builder.Services.AddRazorPages();
 builder.Services.AddRazorComponents()

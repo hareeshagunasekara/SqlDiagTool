@@ -3,9 +3,11 @@ using SqlDiagTool.Shared;
 
 namespace SqlDiagTool.Runner;
 
-// Runs all registered structure checks against one connection string; returns combined results only.
+// Runs structure checks against a connection; optional category filter for subset.
 public sealed class DiagnosticsRunner
 {
+    private const int MaxParallelism = 5;
+
     private readonly IReadOnlyList<IStructureCheck> _checks;
 
     public DiagnosticsRunner(IReadOnlyList<IStructureCheck> checks)
@@ -13,24 +15,47 @@ public sealed class DiagnosticsRunner
         _checks = checks ?? Array.Empty<IStructureCheck>();
     }
 
-    public async Task<IReadOnlyList<TestResult>> RunAllAsync(string connectionString)
+    // categoryFilter: null/empty = all checks; else only checks in that category.
+    public async Task<IReadOnlyList<TestResult>> RunAllAsync(string connectionString, string? categoryFilter = null)
     {
         if (string.IsNullOrWhiteSpace(connectionString))
             return Array.Empty<TestResult>();
 
-        var results = new List<TestResult>();
-        foreach (var check in _checks)
-        {
-            try
-            {
-                var result = await check.RunAsync(connectionString);
-                results.Add(result);
-            }
-            catch (Exception ex)
-            {
-                results.Add(new TestResult(check.Name, Status.FAIL, $"Check threw: {ex.Message}", 0, check.Id));
-            }
-        }
+        var toRun = GetChecksToRun(categoryFilter).ToList();
+        using var throttle = new SemaphoreSlim(MaxParallelism);
+
+        var tasks = toRun.Select(check => RunCheckAsync(check, connectionString, throttle));
+        var results = await Task.WhenAll(tasks);
+
         return results;
+    }
+
+    private static async Task<TestResult> RunCheckAsync(
+        IStructureCheck check, string connectionString, SemaphoreSlim throttle)
+    {
+        await throttle.WaitAsync();
+        try
+        {
+            return await check.RunAsync(connectionString);
+        }
+        catch (Exception ex)
+        {
+            return new TestResult(check.Name, Status.FAIL, $"Check threw: {ex.Message}", 0, check.Id);
+        }
+        finally
+        {
+            throttle.Release();
+        }
+    }
+
+    private const string SchemaOverviewCategory = "Schema Overview";
+
+    private IEnumerable<IStructureCheck> GetChecksToRun(string? categoryFilter)
+    {
+        if (string.IsNullOrWhiteSpace(categoryFilter))
+            return _checks;
+        return _checks.Where(c =>
+            string.Equals(c.Category, categoryFilter, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(c.Category, SchemaOverviewCategory, StringComparison.OrdinalIgnoreCase));
     }
 }

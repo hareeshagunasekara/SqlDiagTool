@@ -22,9 +22,6 @@ project.fragment.lock.json
 .DS_Store
 Thumbs.db
 
-# ─── Diagnostic reports ────────────────────────
-SqlDiagTool/reports/
-
 # ─── Secrets  ──────────────────────────────────
 appsettings.*.json
 *.env

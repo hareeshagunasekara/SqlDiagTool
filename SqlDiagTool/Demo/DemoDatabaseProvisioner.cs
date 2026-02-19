@@ -7,29 +7,8 @@ public sealed class DemoDatabaseProvisioner
 {
     private const int DefaultTimeoutSeconds = 15;
 
-    // Default demo DBs: NoPKs triggers MissingPrimaryKeysCheck WARNING, Clean triggers PASS.
     public static IReadOnlyList<DemoDatabaseSpec> GetDefaultSpecs() => new List<DemoDatabaseSpec>
     {
-        new()
-        {
-            Id = "demo-nopks",
-            DisplayName = "Demo – No primary keys",
-            DatabaseName = "SqlDiagTool_Demo_NoPKs",
-            SeedSql = """
-                IF NOT EXISTS (SELECT 1 FROM sys.tables t JOIN sys.schemas s ON t.schema_id = s.schema_id WHERE s.name = 'dbo' AND t.name = 'NoPkTable')
-                CREATE TABLE dbo.NoPkTable (Id int, Name nvarchar(100));
-                """
-        },
-        new()
-        {
-            Id = "demo-clean",
-            DisplayName = "Demo – Clean",
-            DatabaseName = "SqlDiagTool_Demo_Clean",
-            SeedSql = """
-                IF NOT EXISTS (SELECT 1 FROM sys.tables t JOIN sys.schemas s ON t.schema_id = s.schema_id WHERE s.name = 'dbo' AND t.name = 'CleanTable')
-                CREATE TABLE dbo.CleanTable (Id int PRIMARY KEY, Name nvarchar(100));
-                """
-        },
         new()
         {
             Id = "demo-retailops-legacy",
@@ -44,6 +23,22 @@ public sealed class DemoDatabaseProvisioner
             DisplayName = "Demo – MedTrack Clinical",
             DatabaseName = "MedTrack_Clinical",
             SeedSql = MedTrackClinicalSeed.GetSeedSql(),
+            SeedTimeoutSeconds = 60
+        },
+        new()
+        {
+            Id = "demo-manufacturingops-industrial",
+            DisplayName = "Demo – ManufacturingOps Industrial",
+            DatabaseName = "ManufacturingOps_Industrial",
+            SeedSql = ManufacturingOpsIndustrialSeed.GetSeedSql(),
+            SeedTimeoutSeconds = 60
+        },
+        new()
+        {
+            Id = "demo-legalcase-db",
+            DisplayName = "Demo – LegalCase DB",
+            DatabaseName = "LegalCase_Db",
+            SeedSql = LegalCaseDbSeed.GetSeedSql(),
             SeedTimeoutSeconds = 60
         }
     };
@@ -99,13 +94,22 @@ public sealed class DemoDatabaseProvisioner
         await cmd.ExecuteNonQueryAsync();
     }
 
+    private const string BatchSeparator = "-- __BATCH__";
+
     private static async Task RunSeedScriptAsync(string serverConnectionString, DemoDatabaseSpec spec, int timeoutSeconds)
     {
         var effectiveTimeout = spec.SeedTimeoutSeconds > 0 ? spec.SeedTimeoutSeconds : timeoutSeconds;
         var builder = new SqlConnectionStringBuilder(serverConnectionString) { InitialCatalog = spec.DatabaseName };
         await using var conn = new SqlConnection(builder.ConnectionString);
         await conn.OpenAsync();
-        await using var cmd = new SqlCommand(spec.SeedSql, conn) { CommandTimeout = effectiveTimeout };
-        await cmd.ExecuteNonQueryAsync();
+
+        var batches = spec.SeedSql.Split(BatchSeparator, StringSplitOptions.RemoveEmptyEntries);
+        foreach (var batch in batches)
+        {
+            var sql = batch.Trim();
+            if (sql.Length == 0) continue;
+            await using var cmd = new SqlCommand(sql, conn) { CommandTimeout = effectiveTimeout };
+            await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

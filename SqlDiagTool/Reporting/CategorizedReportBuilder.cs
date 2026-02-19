@@ -15,6 +15,7 @@ public static class CategorizedReportBuilder
     {
         var report = new ScanReport
         {
+            ReportFormatVersion = 1,
             Database = new ScanReportDatabase
             {
                 Name = databaseName ?? "",
@@ -71,7 +72,7 @@ public static class CategorizedReportBuilder
             .ThenBy(kv => kv.Key)
             .Select(kv => new ScanReportCategory
             {
-                Name = kv.Key,
+                Name = ReportDisplayNames.GetCategoryDisplayName(kv.Key),
                 Checks = kv.Value.Select(ToCheckEntry).ToList()
             })
             .ToList();
@@ -85,14 +86,21 @@ public static class CategorizedReportBuilder
             Id = r.CheckId,
             Code = r.Code ?? "",
             Status = r.Status.ToString(),
-            Title = r.TestName,
+            StatusDisplay = ReportDisplayNames.GetStatusDisplayName(r.Status.ToString()),
+            Title = ReportDisplayNames.GetCheckDisplayTitle(r.Code, r.TestName),
             Message = r.Message,
             Items = r.Items?.ToList(),
             DurationMs = r.ElapsedMs,
             ItemCount = itemCount
         };
 
-        if (r.Status != Status.PASS)
+        if (r.Status == Status.FAIL)
+        {
+            entry.WhatsWrong = string.IsNullOrWhiteSpace(r.Message) ? "This check could not complete." : r.Message;
+            entry.WhyItMatters = "We couldn't run this check, so we can't tell if your database has this type of issue. Common causes: insufficient permissions on system views, or a SQL Server version that doesn't support what the check needs.";
+            entry.WhatToDoNext = "Grant SELECT on system catalog views if needed, or upgrade to a compatible SQL Server version. Then run diagnostics again.";
+        }
+        else if (r.Status == Status.WARNING)
         {
             var (whatsWrong, whyItMatters, whatToDoNext) = CheckFriendlyCopy.Get(r.Code ?? "", itemCount);
             entry.WhatsWrong = whatsWrong;

@@ -1,0 +1,494 @@
+{
+  "reportFormatVersion": 1,
+  "database": {
+    "name": "LegalCase_Db",
+    "server": "localhost,1433",
+    "scannedAt": "2026-02-19T04:33:24.648583Z"
+  },
+  "summary": {
+    "pass": 18,
+    "warn": 10,
+    "fail": 0,
+    "durationMs": 334
+  },
+  "categories": [
+    {
+      "name": "Data quality \u0026 duplicates",
+      "checks": [
+        {
+          "id": 17,
+          "code": "DUPLICATE_RECORDS",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Duplicate values in candidate key or business identifier columns",
+          "message": "No duplicate values found in key-like columns",
+          "items": null,
+          "durationMs": 11,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 28,
+          "code": "INCONSISTENT_FORMATS",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Inconsistent formats (casing, whitespace) in status-like columns",
+          "message": "No inconsistent formats found in status-like columns",
+          "items": null,
+          "durationMs": 5,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        }
+      ]
+    },
+    {
+      "name": "Data types \u0026 consistency",
+      "checks": [
+        {
+          "id": 9,
+          "code": "FK_TYPE_MISMATCH",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Foreign key type mismatches",
+          "message": "No FK type mismatches found",
+          "items": null,
+          "durationMs": 10,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 10,
+          "code": "MONEY_AS_FLOAT",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Monetary or amount columns using approximate numeric type (float/real)",
+          "message": "No money-like columns stored as float/real",
+          "items": null,
+          "durationMs": 7,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 29,
+          "code": "BROKEN_BUSINESS_RULES",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Date and amount logic violations",
+          "message": "No date or amount logic violations found",
+          "items": null,
+          "durationMs": 9,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 30,
+          "code": "STATUS_TYPE_CONSTRAINT_CONSISTENCY",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Inconsistent status and type constraint enforcement",
+          "message": "Status and type constraints enforced consistently across tables",
+          "items": null,
+          "durationMs": 6,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        }
+      ]
+    },
+    {
+      "name": "Index usage \u0026 maintenance",
+      "checks": [
+        {
+          "id": 11,
+          "code": "MISSING_INDEX_SUGGESTIONS",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Suggested missing indexes",
+          "message": "No missing index suggestions",
+          "items": null,
+          "durationMs": 7,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 12,
+          "code": "UNUSED_INDEXES",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Unused indexes",
+          "message": "No unused indexes found",
+          "items": null,
+          "durationMs": 6,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 13,
+          "code": "FRAGMENTATION",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Fragmented indexes",
+          "message": "No significant index fragmentation",
+          "items": null,
+          "durationMs": 7,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        }
+      ]
+    },
+    {
+      "name": "Primary keys, unique \u0026 check constraints",
+      "checks": [
+        {
+          "id": 1,
+          "code": "MISSING_PK",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Tables without primary keys",
+          "message": "All tables have primary keys defined",
+          "items": null,
+          "durationMs": 119,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 5,
+          "code": "MISSING_CHECK_CONSTRAINTS",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Status or enumerated columns without check constraint",
+          "message": "Found 1 column(s): dbo.Cases.Status",
+          "items": [
+            "dbo.Cases.Status"
+          ],
+          "durationMs": 6,
+          "itemCount": 1,
+          "whatsWrong": "Found 1 status or enum-style column(s) without a check constraint",
+          "whyItMatters": "Without a check constraint, invalid or out-of-range values can be stored.",
+          "whatToDoNext": "Add check constraints to limit allowed values for the columns in Details."
+        },
+        {
+          "id": 6,
+          "code": "MISSING_UNIQUE_CONSTRAINTS",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Business identifier columns without unique constraint",
+          "message": "Found 1 column(s): dbo.Clients.ContactEmail",
+          "items": [
+            "dbo.Clients.ContactEmail"
+          ],
+          "durationMs": 5,
+          "itemCount": 1,
+          "whatsWrong": "Found 1 column(s) that look like business identifiers (e.g. code, email) without a unique constraint",
+          "whyItMatters": "Without a unique constraint, duplicate values can slip in and break your business rules.",
+          "whatToDoNext": "Add a unique constraint on the columns in Details where uniqueness is required."
+        },
+        {
+          "id": 18,
+          "code": "NULLABLE_OR_DISABLED_PK",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Nullable or disabled primary keys",
+          "message": "No nullable PK columns or disabled PK constraints",
+          "items": null,
+          "durationMs": 10,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 20,
+          "code": "COMPOSITE_PK_REVIEW",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Tables with composite primary keys",
+          "message": "No composite primary keys; nothing to review",
+          "items": null,
+          "durationMs": 4,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 21,
+          "code": "DUPLICATE_IDENTITY_CANDIDATES",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Multiple single-column unique indexes",
+          "message": "No tables with multiple single-column unique indexes",
+          "items": null,
+          "durationMs": 3,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 19,
+          "code": "NATURAL_SURROGATE_HEURISTIC",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Tables with both surrogate and natural key columns",
+          "message": "No tables with both Id-like and natural-key-like columns",
+          "items": null,
+          "durationMs": 1,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        }
+      ]
+    },
+    {
+      "name": "Relationships \u0026 foreign keys",
+      "checks": [
+        {
+          "id": 7,
+          "code": "MISSING_FOREIGN_KEYS",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Relationships without foreign key",
+          "message": "No missing FK relationships found (all enforced by DB or N/A)",
+          "items": null,
+          "durationMs": 24,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 8,
+          "code": "ORPHAN_RECORDS",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Orphaned rows (child without parent)",
+          "message": "Found orphan(s): CaseNotes.CaseId (1 orphan(s))",
+          "items": [
+            "CaseNotes.CaseId (1 orphan(s))"
+          ],
+          "durationMs": 33,
+          "itemCount": 1,
+          "whatsWrong": "Found 1 orphaned record set(s)",
+          "whyItMatters": "Some rows reference parents that no longer exist. This can break reports and joins.",
+          "whatToDoNext": "Remove or fix the orphaned rows, then add or update foreign keys to prevent this in future."
+        },
+        {
+          "id": 22,
+          "code": "FK_TARGET_NOT_UNIQUE",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Foreign keys referencing non-unique columns",
+          "message": "All FK targets are UNIQUE or PK",
+          "items": null,
+          "durationMs": 2,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 23,
+          "code": "NULLABLE_FK_COLUMNS",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Nullable foreign key columns",
+          "message": "FK columns that allow NULL; review if required: dbo.Attorneys.PrimaryCaseId (FK: FK_Attorneys_PrimaryCase); dbo.CaseNotes.CaseId (FK: FK__CaseNotes__CaseI__68487DD7)",
+          "items": [
+            "dbo.Attorneys.PrimaryCaseId (FK: FK_Attorneys_PrimaryCase)",
+            "dbo.CaseNotes.CaseId (FK: FK__CaseNotes__CaseI__68487DD7)"
+          ],
+          "durationMs": 2,
+          "itemCount": 2,
+          "whatsWrong": "Found 2 nullable foreign key column(s)",
+          "whyItMatters": "If the relationship is required, allowing NULL can lead to orphaned or inconsistent data.",
+          "whatToDoNext": "Make the column NOT NULL where the relationship is required (see Details)."
+        },
+        {
+          "id": 24,
+          "code": "FK_CASCADE_RULES",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Cascade delete/update rules",
+          "message": "1 FK(s) use non-NO_ACTION; review intent: dbo.Attorneys.FK__Attorneys__FirmI__5812160E \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.Attorneys.FK_Attorneys_PrimaryCase \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.BillingEntries.FK__BillingEn__Attor__6E01572D \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.BillingEntries.FK__BillingEn__CaseI__6D0D32F4 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.CaseNotes.FK__CaseNotes__CaseI__68487DD7 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.Cases.FK__Cases__ClientId__5AEE82B9 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.Cases.FK__Cases__LeadAttor__5BE2A6F2 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.CaseSummaries.FK__CaseSumma__CaseI__5FB337D6 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.ClientProfiles.FK__ClientPro__Clien__628FA481 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION; dbo.CourtSessions.FK__CourtSess__CaseI__656C112C \u2192 DELETE:CASCADE, UPDATE:NO_ACTION",
+          "items": [
+            "dbo.Attorneys.FK__Attorneys__FirmI__5812160E \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.Attorneys.FK_Attorneys_PrimaryCase \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.BillingEntries.FK__BillingEn__Attor__6E01572D \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.BillingEntries.FK__BillingEn__CaseI__6D0D32F4 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.CaseNotes.FK__CaseNotes__CaseI__68487DD7 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.Cases.FK__Cases__ClientId__5AEE82B9 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.Cases.FK__Cases__LeadAttor__5BE2A6F2 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.CaseSummaries.FK__CaseSumma__CaseI__5FB337D6 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.ClientProfiles.FK__ClientPro__Clien__628FA481 \u2192 DELETE:NO_ACTION, UPDATE:NO_ACTION",
+            "dbo.CourtSessions.FK__CourtSess__CaseI__656C112C \u2192 DELETE:CASCADE, UPDATE:NO_ACTION"
+          ],
+          "durationMs": 3,
+          "itemCount": 10,
+          "whatsWrong": "Found 10 foreign key(s) using cascade rules",
+          "whyItMatters": "Cascade rules automatically delete or update rows\u2014confirm this is what you want.",
+          "whatToDoNext": "Review each FK in Details; change to NO_ACTION if you don\u0027t want automatic updates or deletes."
+        },
+        {
+          "id": 25,
+          "code": "CIRCULAR_FK",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Circular foreign key dependencies",
+          "message": "Circular FK dependency detected: dbo.Attorneys; dbo.Cases",
+          "items": [
+            "dbo.Attorneys",
+            "dbo.Cases"
+          ],
+          "durationMs": 2,
+          "itemCount": 2,
+          "whatsWrong": "Circular foreign key dependency involving 2 table(s)",
+          "whyItMatters": "Circular references can complicate insert order and schema changes.",
+          "whatToDoNext": "Consider restructuring\u2014e.g. nullable FK or junction table\u2014to break the cycle (see Details)."
+        },
+        {
+          "id": 26,
+          "code": "ONE_TO_ONE_MISSING_UNIQUE",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "One-to-one relationship missing unique constraint",
+          "message": "FK column may represent 1:1; add UNIQUE if so: dbo.Attorneys.FirmId; dbo.Attorneys.PrimaryCaseId; dbo.BillingEntries.AttorneyId; dbo.BillingEntries.CaseId; dbo.CaseNotes.CaseId; dbo.Cases.ClientId; dbo.Cases.LeadAttorneyId; dbo.CaseSummaries.CaseId; dbo.ClientProfiles.ClientId; dbo.CourtSessions.CaseId",
+          "items": [
+            "dbo.Attorneys.FirmId",
+            "dbo.Attorneys.PrimaryCaseId",
+            "dbo.BillingEntries.AttorneyId",
+            "dbo.BillingEntries.CaseId",
+            "dbo.CaseNotes.CaseId",
+            "dbo.Cases.ClientId",
+            "dbo.Cases.LeadAttorneyId",
+            "dbo.CaseSummaries.CaseId",
+            "dbo.ClientProfiles.ClientId",
+            "dbo.CourtSessions.CaseId"
+          ],
+          "durationMs": 3,
+          "itemCount": 10,
+          "whatsWrong": "Found 10 foreign key column(s) that may represent one-to-one without a UNIQUE constraint",
+          "whyItMatters": "Without UNIQUE, the database allows multiple rows to reference the same parent. Add UNIQUE if it\u0027s truly one-to-one.",
+          "whatToDoNext": "Add a UNIQUE constraint on the foreign key column(s) in Details if the relationship is one-to-one."
+        },
+        {
+          "id": 27,
+          "code": "POLYMORPHIC_RELATIONSHIP",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Polymorphic reference columns (type \u002B id) without foreign key",
+          "message": "Polymorphic-style columns with no FK; integrity not enforced: dbo.Documents: documentable_type, documentable_id",
+          "items": [
+            "dbo.Documents: documentable_type, documentable_id"
+          ],
+          "durationMs": 5,
+          "itemCount": 1,
+          "whatsWrong": "Found 1 polymorphic reference(s) (type \u002B id pair) with no foreign key",
+          "whyItMatters": "When one id column can point to different table types, the database can\u0027t enforce referential integrity.",
+          "whatToDoNext": "Document your validation rules, or use concrete foreign keys or separate columns per type (see Details)."
+        }
+      ]
+    },
+    {
+      "name": "Table structure \u0026 design",
+      "checks": [
+        {
+          "id": 2,
+          "code": "HEAP_TABLES",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Tables without clustered index (heaps)",
+          "message": "No heap tables found",
+          "items": null,
+          "durationMs": 3,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        },
+        {
+          "id": 3,
+          "code": "EXTREME_NULLABLE_RATIO",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Tables with many nullable columns",
+          "message": "Found 5 table(s) with \u003E50% nullable columns: dbo.Attorneys, dbo.CaseNotes, dbo.Clients, dbo.Documents, dbo.Firms",
+          "items": [
+            "dbo.Attorneys",
+            "dbo.CaseNotes",
+            "dbo.Clients",
+            "dbo.Documents",
+            "dbo.Firms"
+          ],
+          "durationMs": 5,
+          "itemCount": 5,
+          "whatsWrong": "Found 5 table(s) with more than half of columns nullable",
+          "whyItMatters": "Too many nullable columns can make queries and reporting harder, and may suggest unclear design.",
+          "whatToDoNext": "Review each table\u2014make columns NOT NULL where a value is always required."
+        },
+        {
+          "id": 4,
+          "code": "JUNCTION_MISSING_KEY",
+          "status": "WARNING",
+          "statusDisplay": "Issues found",
+          "title": "Junction tables without composite key",
+          "message": "Found 8 table(s): dbo.Attorneys, dbo.BillingEntries, dbo.CaseNotes, dbo.Cases, dbo.CaseSummaries, dbo.ClientProfiles, dbo.CourtSessions, dbo.Documents",
+          "items": [
+            "dbo.Attorneys",
+            "dbo.BillingEntries",
+            "dbo.CaseNotes",
+            "dbo.Cases",
+            "dbo.CaseSummaries",
+            "dbo.ClientProfiles",
+            "dbo.CourtSessions",
+            "dbo.Documents"
+          ],
+          "durationMs": 7,
+          "itemCount": 8,
+          "whatsWrong": "Found 8 suspected junction table(s) without a composite key",
+          "whyItMatters": "Without a composite key, duplicate links can be stored and joins may return wrong counts.",
+          "whatToDoNext": "Add a composite primary key or unique constraint on the two foreign key columns."
+        }
+      ]
+    },
+    {
+      "name": "Database overview",
+      "checks": [
+        {
+          "id": 15,
+          "code": "SCHEMA_SUMMARY",
+          "status": "PASS",
+          "statusDisplay": "All checks passed",
+          "title": "Database summary",
+          "message": "1 schema \u2022 10 tables \u2022 ~28 rows \u2022 1 MB \u2022 10 indexes \u2022 no views \u2022 10 relationships",
+          "items": null,
+          "durationMs": 29,
+          "itemCount": 0,
+          "whatsWrong": null,
+          "whyItMatters": null,
+          "whatToDoNext": null
+        }
+      ]
+    }
+  ]
+}

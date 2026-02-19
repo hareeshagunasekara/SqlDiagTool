@@ -22,8 +22,7 @@ public sealed class MissingCheckConstraintsCheck : IStructureCheck
           AND c.name LIKE '%Status'
           AND NOT EXISTS (
             SELECT 1 FROM sys.check_constraints cc
-            JOIN sys.check_constraint_columns ccc ON ccc.object_id = cc.parent_object_id AND ccc.constraint_object_id = cc.object_id
-            WHERE ccc.parent_object_id = c.object_id AND ccc.parent_column_id = c.column_id
+            WHERE cc.parent_object_id = c.object_id
           )
         ORDER BY s.name, t.name, c.name
         """;

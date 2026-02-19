@@ -4,7 +4,7 @@ using SqlDiagTool.Shared;
 
 namespace SqlDiagTool.Checks;
 
-// Finds tables with no primary key (sys.tables + sys.key_constraints).
+// Finds tables with no primary key 
 public sealed class MissingPrimaryKeysCheck : IStructureCheck
 {
     public int Id => 1;
