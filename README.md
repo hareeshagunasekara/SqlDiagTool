@@ -406,24 +406,10 @@ Development mode enables:
 - **Microsoft.Extensions.Configuration**: Configuration management
 - **ASP.NET Core**: Web framework
 
-## Contributing
-
-Contributions are welcome! Areas for improvement:
-
-- Additional check implementations
-- Performance optimizations
-- UI/UX enhancements
-- Documentation improvements
-- Test coverage
-
-## License
-
-[Add your license information here]
-
 ## Support
 
 For issues, questions, or contributions, please [open an issue](link-to-issues) or [create a pull request](link-to-prs).
 
 ---
 
-**Note**: This tool focuses on database structure and design analysis. It does not include query performance tuning, deadlock analysis, or execution plan optimization (though these may be added in future versions).
+**Note**: This tool focuses on database structure and design analysis. It does not include query performance tuning, deadlock analysis, or execution plan optimization.
